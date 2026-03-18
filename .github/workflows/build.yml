@@ -14,9 +14,10 @@ on:
       arch:
         description: 'Target architecture(s)'
         required: true
-        default: 'android-arm64'
+        default: 'android-x86_64'
         type: choice
         options:
+          - android-x86_64
           - android-arm64
           - android-arm
           - android-arm64,android-arm
@@ -58,7 +59,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential curl git python3 unzip
 
-      # Cache NDK (~1.5 GB) — saves ~3 min on subsequent runs
       - name: Cache NDK
         uses: actions/cache@v4
         id: ndk-cache
@@ -74,7 +74,6 @@ jobs:
             https://dl.google.com/android/repository/android-ndk-r25c-linux.zip
           cd build && unzip -q android-ndk-r25c-linux.zip && rm android-ndk-r25c-linux.zip
 
-      # Cache Frida source tree — saves ~5 min clone time
       - name: Cache Frida source
         uses: actions/cache@v4
         id: frida-cache
@@ -88,11 +87,9 @@ jobs:
           git clone --recurse-submodules --branch ${{ inputs.frida_version }} --depth 1 \
             https://github.com/frida/frida.git build/frida
 
-      # If cache hit, we need a fresh copy (patches are destructive)
       - name: Prepare fresh source from cache
         if: steps.frida-cache.outputs.cache-hit == 'true'
         run: |
-          # Restore to clean state (including build dir — patches are destructive)
           cd build/frida
           git checkout -- .
           git submodule foreach --recursive 'git checkout -- . || true'
